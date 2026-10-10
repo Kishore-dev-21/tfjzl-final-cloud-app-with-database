@@ -3,28 +3,32 @@
 <head>
     <meta charset="UTF-8">
     {% load static %}
+    <title>Exam Results - Online Course</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </head>
 <body>
 
- <nav class="navbar navbar-light bg-light">
+<nav class="navbar navbar-light bg-light">
     <div class="container-fluid">
         <div class="navbar-header">
-              <a class="navbar-brand" href="{% url 'onlinecourse:index' %}">Home</a>
+            <a class="navbar-brand" href="{% url 'onlinecourse:index' %}">Online Course</a>
         </div>
         <ul class="nav navbar-nav navbar-right">
             {% if user.is_authenticated %}
             <li>
-                <a class="btn btn-link" href="#">{{ user.first_name }}({{ user.username }})</a>
-                <a class="btn btn-link" href="{% url 'onlinecourse:logout' %}">Logout</a>
+                <span class="mr-3">Welcome, {{ user.first_name }} ({{ user.username }})</span>
+                <a class="btn btn-outline-primary" href="{% url 'onlinecourse:logout' %}">Logout</a>
             </li>
             {% else %}
             <li>
                 <form class="form-inline" action="{% url 'onlinecourse:login' %}" method="post">
                     {% csrf_token %}
                     <div class="input-group">
-                        <input type="text" class="form-control" placeholder="Username" name="username" >
-                        <input type="password" class="form-control" placeholder="Username" name="psw" >
+                        <input type="text" class="form-control" placeholder="Username" name="username">
+                        <input type="password" class="form-control" placeholder="Password" name="psw">
                         <button class="btn btn-primary" type="submit">Login</button>
                         <a class="btn btn-link" href="{% url 'onlinecourse:registration' %}">Sign Up</a>
                     </div>
@@ -35,21 +39,46 @@
     </div>
 </nav>
 
-<div class="container-fluid">
-    {% if grade > 80 %}
+<div class="container mt-4">
+    {% if grade >= 80 %}
     <div class="alert alert-success">
-       <!--HINT Display passed info -->
+        <h4><b>Congratulations, {{ user.first_name }}!</b></h4>
+        <p>You have passed the exam and completed the course with score <b>{{ grade }}/100</b>.</p>
     </div>
-        {% else %}
-        <div class="alert alert-danger">
-            <!--HINT Display failed info -->
-        </div>
-        <a class="btn btn-link text-danger" href="{% url 'onlinecourse:course_details' course.id %}">Re-test</a>
-        {% endif %}
-        <div class="card-columns-vertical mt-1">
-        <h5 class="">Exam results</h5>
-            <!--HINT Display exam results-->
-        </div>
+    {% else %}
+    <div class="alert alert-danger">
+        <h4><b>Failed</b></h4>
+        <p>Sorry, {{ user.first_name }}! You have failed the exam with score <b>{{ grade }}/100</b>.</p>
     </div>
+    <a class="btn btn-link text-danger" href="{% url 'onlinecourse:course_details' course.id %}">Re-test</a>
+    {% endif %}
+
+    <div class="card-columns-vertical mt-4">
+        <h4 class="mb-3">Exam Results</h4>
+        {% for result in question_results %}
+        <div class="card mt-3">
+            <div class="card-header {% if result.is_correct %}bg-success text-white{% else %}bg-danger text-white{% endif %}">
+                <h5>Question: {{ result.question.question_text }}</h5>
+                <span>Points: {{ result.points_awarded }}/{{ result.question.grade }}</span>
+            </div>
+            <div class="card-body">
+                {% for choice in result.question.choice_set.all %}
+                <div class="form-check">
+                    <span class="{% if choice.is_correct %}text-success font-weight-bold{% elif choice in result.selected_choices %}text-danger{% endif %}">
+                        [ {% if choice in result.selected_choices %}X{% else %} &nbsp; {% endif %} ] {{ choice.choice_text }}
+                        {% if choice.is_correct %}(Correct Answer){% endif %}
+                    </span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="mt-4 mb-5">
+        <a class="btn btn-primary" href="{% url 'onlinecourse:course_details' course.id %}">Back to Course</a>
+    </div>
+</div>
+
 </body>
 </html>
